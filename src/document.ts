@@ -1,25 +1,16 @@
-import { Doc } from 'yjs';
-import { Awareness } from 'y-protocols/awareness';
+import * as Y from 'yjs';
 import { Namespace, Socket } from 'socket.io';
 import * as AwarenessProtocol from 'y-protocols/awareness';
+import { AwarenessChange } from './types';
 
 const gcEnabled = process.env.GC !== 'false' && process.env.GC !== '0';
-// TODO: Documentation
-export interface AwarenessChange {
-    /**
-     * The clients added
-     */
-    added: number[];
-    /**
-     * The clients updated
-     */
-    updated: number[];
-    /**
-     * The clients removed
-     */
-    removed: number[];
-}
-// TODO: Documentation
+
+/**
+ * Document callbacks. Here you can set:
+ * - onUpdate: Set a callback that will be triggered when the document is updated
+ * - onChangeAwareness: Set a callback that will be triggered when the awareness is updated
+ * - onDestroy: Set a callback that will be triggered when the document is destroyed
+ */
 export interface Callbacks {
     /**
      * Set a callback that will be triggered when the document is updated
@@ -34,8 +25,11 @@ export interface Callbacks {
      */
     onDestroy?: (doc: Document) => Promise<void> | void,
 }
-// TODO: Documentation
-export class Document extends Doc {
+
+/**
+ * YSocketIO document
+ */
+export class Document extends Y.Doc {
     /**
      * The document name
      * @type {string}
@@ -51,7 +45,7 @@ export class Document extends Doc {
      * The document awareness
      * @type {Awareness}
      */
-    public awareness: Awareness;
+    public awareness: AwarenessProtocol.Awareness;
     /**
      * The document callbacks
      * @type {Callbacks}
@@ -70,7 +64,7 @@ export class Document extends Doc {
         super({ gc: gcEnabled });
         this.name = name;
         this.namespace = namespace;
-        this.awareness = new Awareness(this);
+        this.awareness = new AwarenessProtocol.Awareness(this);
         this.awareness.setLocalState(null);
         this.callbacks = callbacks;
 

@@ -1,23 +1,17 @@
 import http from 'http';
-import express from 'express';
-import path from 'path';
 import { Server, Socket } from 'socket.io';
 import { YSocketIO } from '../y-socket-io';
 
-const app = express();
-const server = http.createServer(app);
-const io = new Server(server);
+const host = process.env.HOST || 'localhost';
+const port = parseInt(`${process.env.PORT || 1234}`);
 
-app.use(express.json());
-
-const PORT = 3001;
-
-app.use(express.static(path.join(__dirname, '..', 'public')));
-
-app.get('/', (_, res) => {
-    res.send({ok: true});
-    // res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
+// Create the http server
+const server = http.createServer((req, res) => {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ 'ok': true}));
 });
+// Create an io instance
+const io = new Server(server);
 
 // Create the YSocketIO instance
 // NOTE: This uses the socket namespaces that match the regular expression /^\/yjs\|.*$/, make sure that when using namespaces
@@ -26,6 +20,12 @@ app.get('/', (_, res) => {
 const ysocketio = new YSocketIO(io, {
     // authenticate: (auth) => auth.token === 'valid-token',
     // levelPersistenceDir: './storage-location',
+    // gcEnabled: true,
+    // onLoadedDocument: (doc) => console.log(`The document ${doc.name} was loaded`),
+    // onUpdateDocument: (doc, update) => console.log(`The document ${doc.name} is updated`, update),
+    // onChangeAwareness: (doc, update) => console.log(`The awareness of the document ${doc.name} is updated`, update),
+    // onDestroyDocument: (doc) => console.log(`The document ${doc.name} is being destroyed`),
+    // onAllConnectionsAreClosed: (doc) => console.log(`All clients of document ${doc.name} are disconected`),
 });
 // Execute initialize method
 ysocketio.initialize();
@@ -41,4 +41,4 @@ io.on('connection', (socket: Socket) => {
 });
 
 // Http server listen
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+server.listen(port, host, undefined, () => console.log(`Server running on port ${port}`));

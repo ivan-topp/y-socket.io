@@ -1,9 +1,9 @@
+import * as Y from 'yjs';
+import * as bc from 'lib0/broadcastchannel';
+import * as AwarenessProtocol from 'y-protocols/awareness';
 import { Observable } from 'lib0/observable';
 import { io, Socket } from 'socket.io-client';
-import * as bc from 'lib0/broadcastchannel'
-import * as Y from 'yjs';
-import * as AwarenessProtocol from 'y-protocols/awareness';
-import { AwarenessChange } from './document';
+import { AwarenessChange } from './types';
 
 /**
  * SocketIOProvider instance configuration. Here you can configure:
@@ -51,7 +51,9 @@ export interface ProviderConfiguration {
     onConnectError?: (error: Error) => void | Promise<void>;
 };
 
-// TODO: Documentation
+/**
+ * The socket io provider class to sync a document
+ */
 export class SocketIOProvider extends Observable<string> {
     /**
      * The connection url to server. Example: `ws://localhost:3001`

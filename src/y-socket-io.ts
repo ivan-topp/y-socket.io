@@ -4,7 +4,9 @@ import * as AwarenessProtocol from 'y-protocols/awareness';
 import { LeveldbPersistence } from 'y-leveldb';
 import { Document } from './document';
 
-// TODO: Documentation
+/**
+ * Level db persistence object
+ */
 export interface Persistence {
     bindState: (docName: string, ydoc: Document) => void;
     writeState: (docName: string, ydoc: Document) => Promise<any>;
@@ -22,7 +24,7 @@ export interface Persistence {
  * - onDestroyDocument: The callback that will triggered just before to destroying the document
  * - onAllConnectionsAreClosed: The callback that will triggered just when all client connections to the document have been closed
  */
-export interface Configuration {
+export interface YSocketIOConfiguration {
     /**
      * Enable/Disable garbage collection (default: gc=true)
      */
@@ -66,7 +68,10 @@ export interface Configuration {
      */
     onAllConnectionsAreClosed?: (doc: Document) => Promise<void> | void,
 }
-// TODO: Documentation
+
+/**
+ * YSocketIO class. This handles document synchronization.
+ */
 export class YSocketIO {
     /**
      * @type {Map<string, Document>}
@@ -85,17 +90,17 @@ export class YSocketIO {
      */
     private persistence: Persistence | null = null;
     /**
-     * @type {Configuration}
+     * @type {YSocketIOConfiguration}
      */
-    private configuration?: Configuration;
+    private configuration?: YSocketIOConfiguration;
 
     /**
      * YSocketIO constructor.
      * @constructor
      * @param {Server} io Server instance from Socket IO
-     * @param {Configuration} configuration (Optional) The YSocketIO configuration
+     * @param {YSocketIOConfiguration} configuration (Optional) The YSocketIO configuration
      */
-    constructor(io: Server, configuration?: Configuration) {
+    constructor(io: Server, configuration?: YSocketIOConfiguration) {
         this.io = io;
 
         this._levelPersistenceDir = configuration?.levelPersistenceDir || process.env.YPERSISTENCE;
