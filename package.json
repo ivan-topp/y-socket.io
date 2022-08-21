@@ -8,7 +8,7 @@
     "Y-Socket.io"
   ],
   "author": "Iván Topp <ivan.topp.sandoval@gmail.com>",
-  "license": "ISC",
+  "license": "MIT",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
@@ -19,14 +19,39 @@
       "require": "./dist/index.js"
     }
   },
+  "bin": {
+    "y-socket-io-server": "./dist/server/server.js",
+    "y-socket-io": "./dist/server/server.js"
+  },
   "files": [
     "dist/**"
   ],
+  "bugs": {
+    "url": "https://github.com/ivan-topp/y-socket.io/issues"
+  },
+  "homepage": "https://github.com/ivan-topp/y-socket.io/blob/main/README.md",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ivan-topp/y-socket.io"
+  },
   "scripts": {
+    "start": "node ./dist/server/server",
     "build": "tsup",
-    "dev": "tsup --watch --onSuccess \"node dist/example/server.js\"",
-    "start": "node ./dist/example/server",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "tsup --watch --onSuccess \"node dist/server/server.js\"",
+    "lint": "ts-standard && tsup",
+    "test": "npm run lint",
+    "example:server": "tsup ./examples/server/server.ts --outDir ./examples/server/dist/ --format cjs --onSuccess \"node ./examples/server/dist/server.js\"",
+    "example:client": "cd ./examples/react-example && npm install && npm run-script dev"
+  },
+  "ts-standard": {
+    "project": "./tsconfig.json",
+    "fix": false,
+    "ignore": [
+      "/dist",
+      "/node_modules",
+      "tsup.config.ts",
+      "/examples"
+    ]
   },
   "dependencies": {
     "lib0": "^0.2.52",
@@ -36,8 +61,9 @@
     "y-protocols": "^1.0.5"
   },
   "devDependencies": {
+    "ts-standard": "^11.0.0",
     "tsup": "^6.2.2",
-    "typescript": "^4.7.4",
+    "typescript": "^4.5.0",
     "yjs": "^13.5.41"
   },
   "peerDependencies": {

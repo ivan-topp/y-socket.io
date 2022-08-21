@@ -2,16 +2,16 @@
  * Clients added, updated and deleted to awareness.
  */
 export interface AwarenessChange {
-    /**
+  /**
      * The clients added
      */
-    added: number[];
-    /**
+  added: number[]
+  /**
      * The clients updated
      */
-    updated: number[];
-    /**
+  updated: number[]
+  /**
      * The clients removed
      */
-    removed: number[];
+  removed: number[]
 }
