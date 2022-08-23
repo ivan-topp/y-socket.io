@@ -169,8 +169,10 @@ export class YSocketIO {
       onUpdate: this.configuration?.onUpdateDocument,
       onChangeAwareness: this.configuration?.onChangeAwareness,
       onDestroy: async (doc) => {
-        this._documents.delete(doc.name)
-        if ((this.configuration?.onDestroyDocument) != null) await this.configuration.onDestroyDocument(doc)
+        if ((this.configuration?.onDestroyDocument) != null) {
+          this._documents.delete(doc.name)
+          await this.configuration.onDestroyDocument(doc)
+        }
       }
     }))
     doc.gc = gc

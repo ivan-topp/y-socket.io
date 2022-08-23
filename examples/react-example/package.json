@@ -9,12 +9,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "events": "^3.3.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.3.0",
-    "util": "^0.12.4",
-    "vite-plugin-html": "^3.2.0",
     "y-socket.io": "file:../../../y-socket.io-1.0.0.tgz",
     "yjs": "^13.5.41"
   },
