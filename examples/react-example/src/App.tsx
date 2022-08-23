@@ -16,7 +16,7 @@ function App() {
       {
         autoConnect: true,
         // disableBc: true,
-        auth: { token: 'valid-token' },
+        // auth: { token: 'valid-token' },
         onConnect: () => {
           setConnected(true);
         },
@@ -31,7 +31,7 @@ function App() {
     const yMap = provider.doc.getMap('data');
     if (!yMap.has('input')) {
       yMap.set('input', '');
-      yMap.observe((event: any, transaction: any) => {
+      yMap.observe((event, transaction) => {
         setInput(yMap.get('input') as string);
       });
     }
@@ -58,7 +58,7 @@ function App() {
         {
           !provider.socket.connected
             ? <>
-              <button onClick={() => provider.connect()}>Conectar</button>
+              <button onClick={() => provider.connect()}>Connect</button>
             </>
             : <div style={{ display: 'flex', flexDirection: 'column' }}>
               <pre>
@@ -71,10 +71,7 @@ function App() {
                 onChange={(e) => provider.doc.getMap('data').set('input', e.target.value ?? '')}
               />
               <br />
-              <button onClick={() => console.log(provider.doc.getMap('data').toJSON())}>Print map</button>
-              <button onClick={() => provider.doc.getMap('data').set('input', `Prueba: ${Math.random()}`)}>Emitir cambio en el doc</button>
-              <button onClick={() => console.log(provider.doc.toJSON())}>Print doc</button>
-              <button onClick={() => provider.socket.emit('testing')}>Emitir evento de prueba</button>
+              <button onClick={() => provider.doc.getMap('data').set('input', `${Math.random()}`)}>Emit random change</button>
             </div>
         }
       </div>
