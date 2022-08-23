@@ -9,20 +9,20 @@
   ],
   "author": "Iván Topp <ivan.topp.sandoval@gmail.com>",
   "license": "MIT",
-  "main": "./dist/client/provider.js",
-  "module": "./dist/client/provider.mjs",
-  "types": "./dist/client/provider.d.ts",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
   "exports": {
     "./package.json": "./package.json",
-    "./dist/index": {
+    "./dist/server": {
+      "types": "./dist/server/index.d.ts",
+      "import": "./dist/server/index.mjs",
+      "require": "./dist/server/index.js"
+    },
+    ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
-    },
-    ".": {
-      "types": "./dist/client/provider.d.ts",
-      "import": "./dist/client/provider.mjs",
-      "require": "./dist/client/provider.js"
     }
   },
   "bin": {
