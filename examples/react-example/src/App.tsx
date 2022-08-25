@@ -35,16 +35,14 @@ function App() {
           autoConnect: true,
           // disableBc: true,
           // auth: { token: 'valid-token' },
-          onConnect: () => {
-            setConnected(true);
-          },
-          onDisconnect: () => {
-            setConnected(false);
-          },
         });
       socketIOProvider.awareness.on('change', () => setClients(Array.from(socketIOProvider.awareness.getStates().keys()).map(key => `${key}`)))
       socketIOProvider.awareness.setLocalState({ id: Math.random(), name: 'Perico' });
       socketIOProvider.on('sync', (status: boolean) => console.log('websocket sync', status))
+      socketIOProvider.on('status', ({ status }: { status: string }) => {
+        if (status === 'connected') setConnected(true);
+        else setConnected(false);
+      })
       setProvider(socketIOProvider);
     }
   }, [doc, provider]);
@@ -63,16 +61,11 @@ function App() {
             </>
             : !!doc &&<div style={{ display: 'flex', flexDirection: 'column' }}>
               <pre>
-                {
-                  JSON.stringify(clients, null, 4)
-                }
+                { JSON.stringify(clients, null, 4) }
               </pre>
               <input
                 value={input}
-                onChange={(e) => {
-                  console.log('first')
-                  doc.getMap('data').set('input', e.target.value ?? '')
-                }}
+                onChange={(e) => doc.getMap('data').set('input', e.target.value ?? '')}
               />
               <br />
               <button onClick={() => doc.getMap('data').set('input', `${Math.random()}`)}>Emit random change</button>

@@ -37,18 +37,6 @@ export interface ProviderConfiguration {
    * (Optional) Add the authentication data
    */
   auth?: { [key: string]: any }
-  /**
-   * (Optional) Set a callback that will triggered immediately when the socket is connected
-   */
-  onConnect?: () => void
-  /**
-   * (Optional) Set a callback that will triggered immediately when the socket is disconnected
-   */
-  onDisconnect?: () => void
-  /**
-   * (Optional) Set a callback that will triggered immediately when the occurs a socket connection error
-   */
-  onConnectError?: (error: Error) => void
 }
 
 /**
@@ -122,10 +110,7 @@ export class SocketIOProvider extends Observable<string> {
     awareness = new AwarenessProtocol.Awareness(doc),
     resyncInterval = -1,
     disableBc = false,
-    auth = {},
-    onConnect,
-    onDisconnect,
-    onConnectError
+    auth = {}
   }: ProviderConfiguration) {
     super()
     while (url[url.length - 1] === '/') {
@@ -148,11 +133,11 @@ export class SocketIOProvider extends Observable<string> {
 
     this.doc.on('update', this.onUpdateDoc)
 
-    this.socket.on('connect', () => this.onSocketConnection(onConnect, resyncInterval))
+    this.socket.on('connect', () => this.onSocketConnection(resyncInterval))
 
-    this.socket.on('disconnect', (event) => this.onSocketDisconnection(event, onDisconnect))
+    this.socket.on('disconnect', (event) => this.onSocketDisconnection(event))
 
-    this.socket.on('connect_error', (error) => this.onSocketConnectionError(error, onConnectError))
+    this.socket.on('connect_error', (error) => this.onSocketConnectionError(error))
 
     this.initSyncListeners()
 
@@ -275,7 +260,7 @@ export class SocketIOProvider extends Observable<string> {
    * @param {number} resyncInterval (Optional) A number of milliseconds for interval of synchronize
    * @type {(onConnect: () => void | Promise<void>, resyncInterval: number = -1) => void}
    */
-  private readonly onSocketConnection = (onConnect: ProviderConfiguration['onConnect'], resyncInterval: ProviderConfiguration['resyncInterval'] = -1): void => {
+  private readonly onSocketConnection = (resyncInterval: ProviderConfiguration['resyncInterval'] = -1): void => {
     this.emit('status', [{ status: 'connected' }])
     this.socket.emit('sync-step-1', Y.encodeStateVector(this.doc), (update: Uint8Array) => {
       Y.applyUpdate(this.doc, new Uint8Array(update), this)
@@ -289,13 +274,6 @@ export class SocketIOProvider extends Observable<string> {
           Y.applyUpdate(this.doc, new Uint8Array(update), this)
         })
       }, resyncInterval)
-    }
-    if (onConnect != null) {
-      try {
-        onConnect()
-      } catch (error) {
-        console.warn(error)
-      }
     }
   }
 
@@ -318,14 +296,7 @@ export class SocketIOProvider extends Observable<string> {
    * @param {() => void | Promise<void>} onDisconnect (Optional) A callback that will be triggered every time that socket is disconnected
    * @type {(event: Socket.DisconnectReason, onDisconnect: () => void | Promise<void>) => void}
    */
-  private readonly onSocketDisconnection = (event: Socket.DisconnectReason, onDisconnect: ProviderConfiguration['onDisconnect']): void => {
-    if (onDisconnect != null) {
-      try {
-        onDisconnect()
-      } catch (error) {
-        console.warn(error)
-      }
-    }
+  private readonly onSocketDisconnection = (event: Socket.DisconnectReason): void => {
     this.emit('connection-close', [event, this])
     this.synced = false
     AwarenessProtocol.removeAwarenessStates(this.awareness, Array.from(this.awareness.getStates().keys()).filter(client => client !== this.doc.clientID), this)
@@ -338,15 +309,8 @@ export class SocketIOProvider extends Observable<string> {
    * @param {(error: Error) => void | Promise<void>} onConnectError (Optional) A callback that will be triggered every time that socket has a connection error
    * @type {(error: Error, onConnectError: (error: Error) => void | Promise<void>) => void}
    */
-  private readonly onSocketConnectionError = (error: Error, onConnectError: ProviderConfiguration['onConnectError']): void => {
+  private readonly onSocketConnectionError = (error: Error): void => {
     this.emit('connection-error', [error, this])
-    if (onConnectError != null) {
-      try {
-        onConnectError(error)
-      } catch (error) {
-        console.warn(error)
-      }
-    }
   }
 
   /**
