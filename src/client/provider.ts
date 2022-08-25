@@ -223,7 +223,7 @@ export class SocketIOProvider extends Observable<string> {
       this.synced = true
     })
 
-    this.socket.on('sync-update', this.onSocketSynUpdate)
+    this.socket.on('sync-update', this.onSocketSyncUpdate)
   }
 
   /**
@@ -276,7 +276,6 @@ export class SocketIOProvider extends Observable<string> {
    * @type {(onConnect: () => void | Promise<void>, resyncInterval: number = -1) => void}
    */
   private readonly onSocketConnection = (onConnect: ProviderConfiguration['onConnect'], resyncInterval: ProviderConfiguration['resyncInterval'] = -1): void => {
-    if (onConnect != null) onConnect()
     this.emit('status', [{ status: 'connected' }])
     this.socket.emit('sync-step-1', Y.encodeStateVector(this.doc), (update: Uint8Array) => {
       Y.applyUpdate(this.doc, new Uint8Array(update), this)
@@ -290,6 +289,13 @@ export class SocketIOProvider extends Observable<string> {
           Y.applyUpdate(this.doc, new Uint8Array(update), this)
         })
       }, resyncInterval)
+    }
+    if (onConnect != null) {
+      try {
+        onConnect()
+      } catch (error) {
+        console.warn(error)
+      }
     }
   }
 
@@ -313,7 +319,13 @@ export class SocketIOProvider extends Observable<string> {
    * @type {(event: Socket.DisconnectReason, onDisconnect: () => void | Promise<void>) => void}
    */
   private readonly onSocketDisconnection = (event: Socket.DisconnectReason, onDisconnect: ProviderConfiguration['onDisconnect']): void => {
-    if (onDisconnect != null) onDisconnect()
+    if (onDisconnect != null) {
+      try {
+        onDisconnect()
+      } catch (error) {
+        console.warn(error)
+      }
+    }
     this.emit('connection-close', [event, this])
     this.synced = false
     AwarenessProtocol.removeAwarenessStates(this.awareness, Array.from(this.awareness.getStates().keys()).filter(client => client !== this.doc.clientID), this)
@@ -328,7 +340,13 @@ export class SocketIOProvider extends Observable<string> {
    */
   private readonly onSocketConnectionError = (error: Error, onConnectError: ProviderConfiguration['onConnectError']): void => {
     this.emit('connection-error', [error, this])
-    if (onConnectError != null) onConnectError(error)
+    if (onConnectError != null) {
+      try {
+        onConnectError(error)
+      } catch (error) {
+        console.warn(error)
+      }
+    }
   }
 
   /**
@@ -371,7 +389,7 @@ export class SocketIOProvider extends Observable<string> {
    * @param {Uint8Array}update A document update received by the `sync-update` socket event
    * @type {(update: Uint8Array) => void}
    */
-  private readonly onSocketSynUpdate = (update: ArrayBuffer): void => {
+  private readonly onSocketSyncUpdate = (update: ArrayBuffer): void => {
     Y.applyUpdate(this.doc, new Uint8Array(update), this)
   }
 

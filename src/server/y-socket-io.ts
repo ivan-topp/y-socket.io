@@ -183,7 +183,7 @@ export class YSocketIO {
         try {
           await this.configuration.onLoadedDocument(doc)
         } catch (error) {
-          console.log(error)
+          console.warn(error)
         }
       }
     }
@@ -276,7 +276,7 @@ export class YSocketIO {
           try {
             await this.configuration.onAllConnectionsAreClosed(doc)
           } catch (error) {
-            console.log(error)
+            console.warn(error)
           }
         }
         if (this.persistence != null) {

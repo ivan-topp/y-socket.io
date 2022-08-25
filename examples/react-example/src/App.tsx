@@ -44,7 +44,7 @@ function App() {
         });
       socketIOProvider.awareness.on('change', () => setClients(Array.from(socketIOProvider.awareness.getStates().keys()).map(key => `${key}`)))
       socketIOProvider.awareness.setLocalState({ id: Math.random(), name: 'Perico' });
-      socketIOProvider.on('sync', () => console.log('websocket sync'))
+      socketIOProvider.on('sync', (status: boolean) => console.log('websocket sync', status))
       setProvider(socketIOProvider);
     }
   }, [doc, provider]);

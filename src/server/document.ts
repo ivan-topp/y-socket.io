@@ -84,7 +84,7 @@ export class Document extends Y.Doc {
       try {
         this.callbacks.onUpdate(this, update)
       } catch (error) {
-        console.log(error)
+        console.warn(error)
       }
     }
     this.namespace.emit('sync-update', update)
@@ -104,7 +104,7 @@ export class Document extends Y.Doc {
       try {
         this.callbacks.onChangeAwareness(this, update)
       } catch (error) {
-        console.log(error)
+        console.warn(error)
       }
     }
     this.namespace.emit('awareness-update', update)
@@ -119,7 +119,7 @@ export class Document extends Y.Doc {
       try {
         await this.callbacks.onDestroy(this)
       } catch (error) {
-        console.log(error)
+        console.warn(error)
       }
     }
     this.awareness.off('update', this.onUpdateAwareness)
