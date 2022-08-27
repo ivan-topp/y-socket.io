@@ -3,9 +3,11 @@
   "version": "1.0.0",
   "description": "Socket IO Connector for Yjs (Inspired by y-websocket)",
   "keywords": [
-    "Yjs",
-    "Socket.io",
-    "Y-Socket.io"
+    "yjs",
+    "socket.io",
+    "y-socket.io",
+    "yjs-provider",
+    "yjs-connector"
   ],
   "author": "Iván Topp <ivan.topp.sandoval@gmail.com>",
   "license": "MIT",
