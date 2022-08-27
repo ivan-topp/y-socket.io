@@ -45,7 +45,7 @@ npm i @ivan-topp/y-socketio
 You can run a basic server (you can review the [source code here](https://github.com/ivan-topp/y-socketio/blob/main/examples/server/src/index.ts)) using:
 
 ```sh
-HOST=localhost PORT=1234 npx y-socketio
+HOST=localhost PORT=1234 npx y-socket-io
 ```
 
 (by default the server listens on localhost:1234)
