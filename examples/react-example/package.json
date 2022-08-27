@@ -9,10 +9,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@ivan-topp/y-socketio": "file:../../../ivan-topp-y-socketio-1.0.0.tgz",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.3.0",
-    "y-socketio": "file:../../../y-socketio-1.0.0.tgz",
     "yjs": "^13.5.41"
   },
   "devDependencies": {

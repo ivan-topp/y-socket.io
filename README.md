@@ -35,7 +35,7 @@ IMPORTANT: y-socketio does not have HTTP callbacks implemented, because as menti
 To install you can run this command
 
 ```sh
-npm i y-socketio
+npm i @ivan-topp/y-socketio
 ```
 
 # Usage
@@ -57,7 +57,7 @@ Although this server is functional, I recommend reviewing the example to extend 
 y-socketio is very easy to add an new or existent project with socket.io. You just need to pass the socket.io server instance as shown below:
 
 ```ts
-import { YSocketIO } from 'y-socketio/dist/server'
+import { YSocketIO } from '@ivan-topp/y-socketio/dist/server'
 
 // Create the YSocketIO instance
 // NOTE: This uses the socket namespaces that match the regular expression /^\/yjs\|.*$/ 
@@ -77,7 +77,7 @@ You can use SocketIOProvider on your client side like this:
 
 ```ts
 import * as Y from 'yjs'
-import { SocketIOProvider } from 'y-socketio'
+import { SocketIOProvider } from '@ivan-topp/y-socketio'
 
 const doc = new Y.Doc()
 const provider = new SocketIOProvider('ws://localhost:1234', 'room-name', doc);
@@ -114,7 +114,7 @@ This example is implemented on ReactJS and it was built with [Vite](https://vite
 ## Server API
 
 ```ts
-import { YSocketIO } from 'y-socketio/dist/server'
+import { YSocketIO } from '@ivan-topp/y-socketio/dist/server'
 ```
 
 <dl>
@@ -167,7 +167,7 @@ configuration = {
 ## Client API
 
 ```ts
-import { SocketIOProvider } from 'y-socketio'
+import { SocketIOProvider } from '@ivan-topp/y-socketio'
 ```
 
 <dl>
