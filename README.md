@@ -251,12 +251,9 @@ configuration = {
   <dd>Add an event listener for the "connection-error" event that is fired when an error has occurred while trying to connect to the websockets server (for example, the client is not authenticated).</dd>
 </dl>
 
-## Author
+## 👦 Author
 
-👦 **Iván Topp**
-
-* Website: https://www.linkedin.com/in/ivan-eduardo-topp-sandoval/
-* Github: [@ivan-topp](https://github.com/ivan-topp)
+**Iván Topp**
 
 ## 🤝 Contributing
 
