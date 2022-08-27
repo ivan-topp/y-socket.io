@@ -1,11 +1,11 @@
 {
-  "name": "y-socket.io",
+  "name": "y-socketio",
   "version": "1.0.0",
   "description": "Socket IO Connector for Yjs (Inspired by y-websocket)",
   "keywords": [
     "Yjs",
     "Socket.io",
-    "Y-Socket.io"
+    "Y-socketio"
   ],
   "author": "Iván Topp <ivan.topp.sandoval@gmail.com>",
   "license": "MIT",
@@ -33,12 +33,12 @@
     "dist/**"
   ],
   "bugs": {
-    "url": "https://github.com/ivan-topp/y-socket.io/issues"
+    "url": "https://github.com/ivan-topp/y-socketio/issues"
   },
-  "homepage": "https://github.com/ivan-topp/y-socket.io/blob/main/README.md",
+  "homepage": "https://github.com/ivan-topp/y-socketio/blob/main/README.md",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ivan-topp/y-socket.io"
+    "url": "https://github.com/ivan-topp/y-socketio"
   },
   "scripts": {
     "start": "node ./dist/server/server",

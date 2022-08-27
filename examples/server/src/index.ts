@@ -2,7 +2,8 @@
 
 import * as http from 'http'
 import { Server, Socket } from 'socket.io'
-import { YSocketIO } from 'y-socket.io/dist/server'
+// import { YSocketIO } from 'y-socketio/dist/server'
+import { YSocketIO } from 'y-socketio/dist/server';
 
 const host = process.env.HOST ?? 'localhost'
 const port = parseInt(`${process.env.PORT ?? 1234}`)

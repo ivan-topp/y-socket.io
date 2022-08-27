@@ -1,24 +1,24 @@
-<h1 align="center">Welcome to y-socket.io 👋</h1>
+<h1 align="center">Welcome to y-socketio 👋</h1>
 <p>
   <img alt="Version" src="https://img.shields.io/badge/version-1.0.0-blue.svg?cacheSeconds=2592000" />
-  <a href="https://github.com/ivan-topp/y-socket.io#readme" target="_blank">
+  <a href="https://github.com/ivan-topp/y-socketio#readme" target="_blank">
     <img alt="Documentation" src="https://img.shields.io/badge/documentation-yes-brightgreen.svg" />
   </a>
-  <a href="https://github.com/ivan-topp/y-socket.io/graphs/commit-activity" target="_blank">
+  <a href="https://github.com/ivan-topp/y-socketio/graphs/commit-activity" target="_blank">
     <img alt="Maintenance" src="https://img.shields.io/badge/Maintained%3F-yes-green.svg" />
   </a>
-  <a href="https://github.com/ivan-topp/y-socket.io/blob/main/LICENSE" target="_blank">
-    <img alt="License: MIT" src="https://img.shields.io/github/license/ivan-topp/y-socket.io" />
+  <a href="https://github.com/ivan-topp/y-socketio/blob/main/LICENSE" target="_blank">
+    <img alt="License: MIT" src="https://img.shields.io/github/license/ivan-topp/y-socketio" />
   </a>
 </p>
 
 > Socket IO Connector for Yjs (Inspired by [y-websocket])
 
-Y-socket.io is a YJS document synchronization implementation over the websockets protocol inspired by [y-websocket], but implemented with Socket.io. So for YJS and Socket.io enthusiasts it could be a simple and scalable alternative.
+y-socketio is a YJS document synchronization implementation over the websockets protocol inspired by [y-websocket], but implemented with Socket.io. So for YJS and Socket.io enthusiasts it could be a simple and scalable alternative.
 
 Like [y-websocket], this is a solid option if you want to manage authentication and authorization for editing YJS documents at a single point.
 
-Y-Socket.io features:
+y-socketio features:
 
 - Configuration and customization of the server side.
 - Easy implementation of your authentication.
@@ -27,7 +27,7 @@ Y-Socket.io features:
 - Cross-tab communication, i.e. when opening the same document in more than one tab, changes are also transmitted via cross-tab communication (broadcast channel and localstorage as an alternative).
 - Awareness information exchange.
 
-IMPORTANT: Y-Socket.io does not have HTTP callbacks implemented, because as mentioned above, you can implement custom callbacks (in the document update callback you could implement your HTTP callback logic).
+IMPORTANT: y-socketio does not have HTTP callbacks implemented, because as mentioned above, you can implement custom callbacks (in the document update callback you could implement your HTTP callback logic).
 
 
 # Installation
@@ -35,29 +35,29 @@ IMPORTANT: Y-Socket.io does not have HTTP callbacks implemented, because as ment
 To install you can run this command
 
 ```sh
-npm i y-socket.io
+npm i y-socketio
 ```
 
 # Usage
 
 ## Server side
 
-You can run a basic server (you can review the [source code here](https://github.com/ivan-topp/y-socket.io/blob/main/examples/server/src/index.ts)) using:
+You can run a basic server (you can review the [source code here](https://github.com/ivan-topp/y-socketio/blob/main/examples/server/src/index.ts)) using:
 
 ```sh
-HOST=localhost PORT=1234 npx y-socket-io
+HOST=localhost PORT=1234 npx y-socketio
 ```
 
 (by default the server listens on localhost:1234)
 
 Although this server is functional, I recommend reviewing the example to extend it, add your own logic (such as authentication, document callbacks, etc.), and adapt it to your use case.
 
-### Adding Y-Socket.io to your project
+### Adding y-socketio to your project
 
-Y-Socket.io is very easy to add an new or existent project with socket.io. You just need to pass the socket.io server instance as shown below:
+y-socketio is very easy to add an new or existent project with socket.io. You just need to pass the socket.io server instance as shown below:
 
 ```ts
-import { YSocketIO } from 'y-socket.io/dist/server'
+import { YSocketIO } from 'y-socketio/dist/server'
 
 // Create the YSocketIO instance
 // NOTE: This uses the socket namespaces that match the regular expression /^\/yjs\|.*$/ 
@@ -77,7 +77,7 @@ You can use SocketIOProvider on your client side like this:
 
 ```ts
 import * as Y from 'yjs'
-import { SocketIOProvider } from 'y-socket.io'
+import { SocketIOProvider } from 'y-socketio'
 
 const doc = new Y.Doc()
 const provider = new SocketIOProvider('ws://localhost:1234', 'room-name', doc);
@@ -89,7 +89,7 @@ provider.on('status', ({ status }: { status: string }) => {
 
 As with the server-side instance, in the SocketIOProvider you can also pass a number of parameters to configure your implementation. You can see the available options in the [Client API](#client-api)
 
-([Here](https://github.com/ivan-topp/y-socket.io/blob/main/examples/react-example/src/App.tsx) you can review an example in ReactJS)
+([Here](https://github.com/ivan-topp/y-socketio/blob/main/examples/react-example/src/App.tsx) you can review an example in ReactJS)
 
 ## Run examples
 
@@ -114,7 +114,7 @@ This example is implemented on ReactJS and it was built with [Vite](https://vite
 ## Server API
 
 ```ts
-import { YSocketIO } from 'y-socket.io/dist/server'
+import { YSocketIO } from 'y-socketio/dist/server'
 ```
 
 <dl>
@@ -167,7 +167,7 @@ configuration = {
 ## Client API
 
 ```ts
-import { SocketIOProvider } from 'y-socket.io'
+import { SocketIOProvider } from 'y-socketio'
 ```
 
 <dl>
@@ -266,7 +266,7 @@ Give a ⭐️ if this project helped you!
 ## 📝 License
 
 Copyright © 2022 [Iván Topp](https://github.com/ivan-topp).<br />
-This project is [MIT](https://github.com/ivan-topp/y-socket.io/blob/main/LICENSE) licensed.
+This project is [MIT](https://github.com/ivan-topp/y-socketio/blob/main/LICENSE) licensed.
 
 ***
 _This README was generated with ❤️ by [readme-md-generator](https://github.com/kefranabg/readme-md-generator)_

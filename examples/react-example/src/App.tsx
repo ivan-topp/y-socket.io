@@ -1,6 +1,6 @@
 import * as Y from 'yjs';
 import { useEffect, useState } from 'react';
-import { SocketIOProvider } from 'y-socket.io';
+import { SocketIOProvider } from 'y-socketio';
 
 function App() {
   const [doc, setDoc] = useState<Y.Doc | null>(null);

@@ -13,7 +13,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "y-socket.io": "file:../../../y-socket.io-1.0.0.tgz",
+    "y-socketio": "file:../../../y-socketio-1.0.0.tgz",
     "yjs": "^13.5.41"
   },
   "devDependencies": {
