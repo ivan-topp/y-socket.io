@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-import http from 'http'
+import * as http from 'http'
 import { Server, Socket } from 'socket.io'
-import { YSocketIO } from '../../src/server/y-socket-io'
+import { YSocketIO } from 'y-socket.io/dist/server'
 
 const host = process.env.HOST ?? 'localhost'
 const port = parseInt(`${process.env.PORT ?? 1234}`)
@@ -23,12 +23,14 @@ const ysocketio = new YSocketIO(io, {
   // authenticate: (auth) => auth.token === 'valid-token',
   // levelPersistenceDir: './storage-location',
   // gcEnabled: true,
-  // onLoadedDocument: (doc) => console.log(`The document ${doc.name} was loaded`),
-  // onUpdateDocument: (doc, update) => console.log(`The document ${doc.name} is updated`, update),
-  // onChangeAwareness: (doc, update) => console.log(`The awareness of the document ${doc.name} is updated`, update),
-  // onDestroyDocument: (doc) => console.log(`The document ${doc.name} is being destroyed`),
-  // onAllConnectionsAreClosed: (doc) => console.log(`All clients of document ${doc.name} are disconected`),
 })
+
+// ysocketio.on('document-loaded', (doc: Document) => console.log(`The document ${doc.name} was loaded`))
+// ysocketio.on('document-update', (doc: Document, update: Uint8Array) => console.log(`The document ${doc.name} is updated`))
+// ysocketio.on('awareness-update', (doc: Document, update: Uint8Array) => console.log(`The awareness of the document ${doc.name} is updated`))
+// ysocketio.on('document-destroy', async (doc: Document) => console.log(`The document ${doc.name} is being destroyed`))
+// ysocketio.on('all-document-connections-closed', async (doc: Document) => console.log(`All clients of document ${doc.name} are disconected`))
+
 // Execute initialize method
 ysocketio.initialize()
 

@@ -3,6 +3,7 @@ import { Namespace, Server, Socket } from 'socket.io'
 import * as AwarenessProtocol from 'y-protocols/awareness'
 import { LeveldbPersistence } from 'y-leveldb'
 import { Document } from './document'
+import { Observable } from 'lib0/observable'
 
 /**
  * Level db persistence object
@@ -18,11 +19,6 @@ export interface Persistence {
  * - gcEnabled: Enable/Disable garbage collection (default: gc=true)
  * - levelPersistenceDir: The directory path where the persistent Level database will be stored
  * - authenticate: The callback to authenticate the client connection
- * - onLoadedDocument: The callback that will triggered immediately when the document has been created or loaded from the level persistence database
- * - onUpdateDocument: The callback that will triggered immediately when the document has been updated
- * - onChangeAwareness: The callback that will triggered immediately when the awareness has changed
- * - onDestroyDocument: The callback that will triggered just before to destroying the document
- * - onAllConnectionsAreClosed: The callback that will triggered just when all client connections to the document have been closed
  */
 export interface YSocketIOConfiguration {
   /**
@@ -40,39 +36,12 @@ export interface YSocketIOConfiguration {
    * @param auth Provided from the auth attribute on the socket io handshake
    */
   authenticate?: (auth: { [key: string]: any }) => boolean
-  /**
-   * Callback that will triggered immediately when the document has been created or loaded from the level persistence database
-   * @param doc The document instance
-   */
-  onLoadedDocument?: (doc: Document) => Promise<void> | void
-  /**
-   * Callback that will triggered immediately when the document has been updated
-   * @param doc The document instance
-   * @param update The document update in Uint8Array format
-   */
-  onUpdateDocument?: (doc: Document, update: Uint8Array) => Promise<void> | void
-  /**
-   * Callback that will triggered immediately when the awareness has changed
-   * @param doc The document instance
-   * @param update The awareness update in Uint8Array format
-   */
-  onChangeAwareness?: (doc: Document, update: Uint8Array) => Promise<void> | void
-  /**
-   * Callback that will triggered just before to destroying the document
-   * @param doc The document instance
-   */
-  onDestroyDocument?: (doc: Document) => Promise<void>
-  /**
-   * Callback that will triggered just when all client connections to the document have been closed
-   * @param doc The document instance
-   */
-  onAllConnectionsAreClosed?: (doc: Document) => Promise<void>
 }
 
 /**
  * YSocketIO class. This handles document synchronization.
  */
-export class YSocketIO {
+export class YSocketIO extends Observable<string>  {
   /**
    * @type {Map<string, Document>}
    */
@@ -101,6 +70,8 @@ export class YSocketIO {
    * @param {YSocketIOConfiguration} configuration (Optional) The YSocketIO configuration
    */
   constructor (io: Server, configuration?: YSocketIOConfiguration) {
+    super()
+
     this.io = io
 
     this._levelPersistenceDir = configuration?.levelPersistenceDir ?? process.env.YPERSISTENCE
@@ -157,7 +128,7 @@ export class YSocketIO {
    *  - If document is created:
    *      - Binds the document to LevelDB if LevelDB persistence is enabled.
    *      - Adds the new document to the documents map.
-   *      - Execute the `onLoadedDocument` callback if it was passed to the constructor parameters.
+   *      - Emit the `document-loaded` event
    * @private
    * @param {string} name The name for the document
    * @param {Namespace} namespace The namespace of the document
@@ -166,26 +137,18 @@ export class YSocketIO {
    */
   private async initDocument (name: string, namespace: Namespace, gc: boolean = true): Promise<Document> {
     const doc = this._documents.get(name) ?? (new Document(name, namespace, {
-      onUpdate: this.configuration?.onUpdateDocument,
-      onChangeAwareness: this.configuration?.onChangeAwareness,
+      onUpdate: (doc, update) => this.emit('document-update', [doc, update]),
+      onChangeAwareness: (doc, update) => this.emit('awareness-update', [doc, update]),
       onDestroy: async (doc) => {
-        if ((this.configuration?.onDestroyDocument) != null) {
-          this._documents.delete(doc.name)
-          await this.configuration.onDestroyDocument(doc)
-        }
+        this._documents.delete(doc.name)
+        this.emit('document-destroy', [doc])
       }
     }))
     doc.gc = gc
     if (!this._documents.has(name)) {
       if (this.persistence != null) await this.persistence.bindState(name, doc)
       this._documents.set(name, doc)
-      if ((this.configuration?.onLoadedDocument) != null) {
-        try {
-          await this.configuration.onLoadedDocument(doc)
-        } catch (error) {
-          console.warn(error)
-        }
-      }
+      this.emit('document-loaded', [doc])
     }
     return doc
   }
@@ -262,7 +225,7 @@ export class YSocketIO {
    *  This function initializes socket event listeners for general purposes.
    *
    *  When a client has been disconnected, check the clients connected to the document namespace,
-   *  if no connection remains, execute the `onAllConnectionsAreClosed` callback if it was passed to the constructor
+   *  if no connection remains, emit the `all-document-connections-closed` event
    *  parameters and if LevelDB persistence is enabled, persist the document in LevelDB and destroys it.
    * @private
    * @type {(socket: Socket, doc: Document) => void}
@@ -272,13 +235,7 @@ export class YSocketIO {
   private readonly initSocketListeners = (socket: Socket, doc: Document): void => {
     socket.on('disconnect', async () => {
       if ((await socket.nsp.allSockets()).size === 0) {
-        if ((this.configuration?.onAllConnectionsAreClosed) != null) {
-          try {
-            await this.configuration.onAllConnectionsAreClosed(doc)
-          } catch (error) {
-            console.warn(error)
-          }
-        }
+        this.emit('all-document-connections-closed', [doc])
         if (this.persistence != null) {
           await this.persistence.writeState(doc.name, doc)
           await doc.destroy()

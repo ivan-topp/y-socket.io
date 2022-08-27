@@ -1,0 +1,19 @@
+{
+    "compilerOptions": {
+        "strict": true,
+        "skipLibCheck": true,
+        "target": "ES6",
+        "module": "CommonJS",
+        "moduleResolution": "node",
+        "forceConsistentCasingInFileNames": true,
+        "noImplicitAny": true,
+        "outDir": "./dist",
+    },
+    "include": [
+        "./src"
+    ],
+    "exclude": [
+        "node_modules",
+        "dist"
+    ]
+}

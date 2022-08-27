@@ -46,7 +46,7 @@
     "dev": "tsup --watch --onSuccess \"node dist/server/server.js\"",
     "lint": "ts-standard && tsup",
     "test": "npm run lint",
-    "example:server": "tsup ./examples/server/server.ts --outDir ./examples/server/dist/ --format cjs --onSuccess \"node ./examples/server/dist/server.js\"",
+    "example:server": "cd ./examples/server && npm install && npm run dev",
     "example:client": "cd ./examples/react-example && npm install && npm run-script dev"
   },
   "ts-standard": {
