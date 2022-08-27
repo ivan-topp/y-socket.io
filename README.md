@@ -14,11 +14,11 @@
 
 > Socket IO Connector for Yjs (Inspired by [y-websocket])
 
-y-socketio is a YJS document synchronization implementation over the websockets protocol inspired by [y-websocket], but implemented with Socket.io. So for YJS and Socket.io enthusiasts it could be a simple and scalable alternative.
+Y-Socketio is a YJS document synchronization implementation over the websockets protocol inspired by [y-websocket], but implemented with Socket.io. So for YJS and Socket.io enthusiasts it could be a simple and scalable alternative.
 
 Like [y-websocket], this is a solid option if you want to manage authentication and authorization for editing YJS documents at a single point.
 
-y-socketio features:
+Y-Socketio features:
 
 - Configuration and customization of the server side.
 - Easy implementation of your authentication.
@@ -27,7 +27,7 @@ y-socketio features:
 - Cross-tab communication, i.e. when opening the same document in more than one tab, changes are also transmitted via cross-tab communication (broadcast channel and localstorage as an alternative).
 - Awareness information exchange.
 
-IMPORTANT: y-socketio does not have HTTP callbacks implemented, because as mentioned above, you can implement custom callbacks (in the document update callback you could implement your HTTP callback logic).
+IMPORTANT: Y-Socketio does not have HTTP callbacks implemented, because as mentioned above, you can implement custom callbacks (in the document update callback you could implement your HTTP callback logic).
 
 
 # Installation
@@ -54,7 +54,7 @@ Although this server is functional, I recommend reviewing the example to extend 
 
 ### Adding y-socketio to your project
 
-y-socketio is very easy to add an new or existent project with socket.io. You just need to pass the socket.io server instance as shown below:
+Y-Socketio is very easy to add an new or existent project with socket.io. You just need to pass the socket.io server instance as shown below:
 
 ```ts
 import { YSocketIO } from '@ivan-topp/y-socketio/dist/server'
