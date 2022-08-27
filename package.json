@@ -1,11 +1,11 @@
 {
-  "name": "@ivan-topp/y-socketio",
-  "version": "1.0.1",
+  "name": "y-socket.io",
+  "version": "1.0.0",
   "description": "Socket IO Connector for Yjs (Inspired by y-websocket)",
   "keywords": [
     "Yjs",
     "Socket.io",
-    "y-Socket.io"
+    "Y-Socket.io"
   ],
   "author": "Iván Topp <ivan.topp.sandoval@gmail.com>",
   "license": "MIT",
