@@ -1,5 +1,8 @@
 <h1 align="center">Welcome to y-socket.io 👋</h1>
 <p>
+  <a href="https://badge.fury.io/js/y-socket.io">
+    <img src="https://badge.fury.io/js/y-socket.io.svg" alt="npm version" height="20">
+  </a>
   <a href="https://github.com/ivan-topp/y-socket.io/blob/main/LICENSE" target="_blank">
     <img alt="License: MIT" src="https://img.shields.io/github/license/ivan-topp/y-socket.io" />
   </a>
