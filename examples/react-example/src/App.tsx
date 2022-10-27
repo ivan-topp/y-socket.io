@@ -5,7 +5,7 @@ import { SocketIOProvider } from 'y-socket.io';
 function App() {
   const [doc, setDoc] = useState<Y.Doc | null>(null);
   const [provider, setProvider] = useState<SocketIOProvider | null>(null);
-  const [connected, setConnected] = useState<boolean>(false);
+  const [connected, setConnected] = useState<boolean>(true);
   const [input, setInput] = useState<string>('');
   const [clients, setClients] = useState<string[]>([]);
 
@@ -15,7 +15,6 @@ function App() {
       const _doc = new Y.Doc();
       const yMap = _doc.getMap('data');
       if (!yMap.has('input')) {
-        yMap.set('input', '');
         yMap.observe((event, transaction) => {
           setInput(yMap.get('input') as string);
         });
@@ -49,6 +48,12 @@ function App() {
 
   if (!provider) return <h1>Initializing provider...</h1>;
 
+  const onChange: React.ChangeEventHandler<HTMLInputElement> = (e) => {
+    if (!doc) return;
+    const yMap = doc.getMap('data');
+    yMap.set('input', e.target.value ?? '')
+  }
+
   return (
     <div>
       App
@@ -59,13 +64,13 @@ function App() {
             ? <>
               <button onClick={() => provider.connect()}>Connect</button>
             </>
-            : !!doc &&<div style={{ display: 'flex', flexDirection: 'column' }}>
+            : !!doc && <div style={{ display: 'flex', flexDirection: 'column' }}>
               <pre>
-                { JSON.stringify(clients, null, 4) }
+                {JSON.stringify(clients, null, 4)}
               </pre>
               <input
                 value={input}
-                onChange={(e) => doc.getMap('data').set('input', e.target.value ?? '')}
+                onChange={onChange}
               />
               <br />
               <button onClick={() => doc.getMap('data').set('input', `${Math.random()}`)}>Emit random change</button>

@@ -246,6 +246,7 @@ export class SocketIOProvider extends Observable<string> {
     if (!this.socket.connected) {
       this.emit('status', [{ status: 'connecting' }])
       this.socket.connect()
+      if (!this.disableBc) this.connectBc()
       this.synced = false
     }
   }
@@ -266,7 +267,6 @@ export class SocketIOProvider extends Observable<string> {
       Y.applyUpdate(this.doc, new Uint8Array(update), this)
     })
     if (this.awareness.getLocalState() !== null) this.socket.emit('awareness-update', AwarenessProtocol.encodeAwarenessUpdate(this.awareness, [this.doc.clientID]))
-    if (!this.disableBc) this.connectBc()
     if (resyncInterval > 0) {
       this.resyncInterval = setInterval(() => {
         if (this.socket.disconnected) return
@@ -342,7 +342,7 @@ export class SocketIOProvider extends Observable<string> {
         bc.publish(this._broadcastChannel, {
           type: 'sync-update',
           data: update
-        })
+        }, this)
       }
     }
   }
@@ -395,6 +395,7 @@ export class SocketIOProvider extends Observable<string> {
       this.bcconnected = true
     }
     bc.publish(this._broadcastChannel, { type: 'sync-step-1', data: Y.encodeStateVector(this.doc) }, this)
+    bc.publish(this._broadcastChannel, { type: 'sync-step-2', data: Y.encodeStateAsUpdate(this.doc) }, this)
     bc.publish(this._broadcastChannel, { type: 'query-awareness', data: null }, this)
     bc.publish(this._broadcastChannel, { type: 'awareness-update', data: AwarenessProtocol.encodeAwarenessUpdate(this.awareness, [this.doc.clientID]) }, this)
   }
