@@ -32,10 +32,10 @@ export interface YSocketIOConfiguration {
   /**
    * Callback to authenticate the client connection.
    *
-   *  If it returns true, the connection is allowed; otherwise, if it returns false, the connection is rejected.
-   * @param auth Provided from the auth attribute on the socket io handshake
+   *  It can be a promise and if it returns true, the connection is allowed; otherwise, if it returns false, the connection is rejected.
+   * @param handshake Provided from the handshake attribute of the socket io
    */
-  authenticate?: (auth: { [key: string]: any }) => boolean
+  authenticate?: (handshake: { [key: string]: any }) => Promise<boolean> | boolean
 }
 
 /**
@@ -92,9 +92,9 @@ export class YSocketIO extends Observable<string>  {
   public initialize (): void {
     const dynamicNamespace = this.io.of(/^\/yjs\|.*$/)
 
-    dynamicNamespace.use((socket, next) => {
+    dynamicNamespace.use(async (socket, next) => {
       if ((this.configuration?.authenticate) == null) return next()
-      if (this.configuration.authenticate(socket.handshake.auth)) return next()
+      if (await this.configuration.authenticate(socket.handshake)) return next()
       else return next(new Error('Unauthorized'))
     })
 

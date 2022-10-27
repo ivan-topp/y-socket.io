@@ -5,7 +5,7 @@ import { SocketIOProvider } from 'y-socket.io';
 function App() {
   const [doc, setDoc] = useState<Y.Doc | null>(null);
   const [provider, setProvider] = useState<SocketIOProvider | null>(null);
-  const [connected, setConnected] = useState<boolean>(true);
+  const [status, setStatus] = useState<string>('disconnected');
   const [input, setInput] = useState<string>('');
   const [clients, setClients] = useState<string[]>([]);
 
@@ -37,10 +37,9 @@ function App() {
         });
       socketIOProvider.awareness.on('change', () => setClients(Array.from(socketIOProvider.awareness.getStates().keys()).map(key => `${key}`)))
       socketIOProvider.awareness.setLocalState({ id: Math.random(), name: 'Perico' });
-      socketIOProvider.on('sync', (status: boolean) => console.log('websocket sync', status))
-      socketIOProvider.on('status', ({ status }: { status: string }) => {
-        if (status === 'connected') setConnected(true);
-        else setConnected(false);
+      socketIOProvider.on('sync', (isSync: boolean) => console.log('websocket sync', isSync))
+      socketIOProvider.on('status', ({ status: _status }: { status: string }) => {
+        if (!!_status) setStatus(_status);
       })
       setProvider(socketIOProvider);
     }
@@ -58,9 +57,9 @@ function App() {
     <div>
       App
       <div style={{ color: 'white' }}>
-        <p>State: {connected ? 'Connected' : 'Disconneted'}</p>
+        <p>State: {status}</p>
         {
-          !connected
+          !(status === 'connected')
             ? <>
               <button onClick={() => provider.connect()}>Connect</button>
             </>

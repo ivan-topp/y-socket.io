@@ -21,7 +21,14 @@ const io = new Server(server)
 //       for other logic, these do not match the regular expression, this could cause unwanted problems.
 // TIP: You can export a new instance from another file to manage as singleton and access documents from all app.
 const ysocketio = new YSocketIO(io, {
-  // authenticate: (auth) => auth.token === 'valid-token',
+  // authenticate: (handshake) => handshake.auth.token === 'valid-token',
+  // OR
+  // authenticate: (handshake) => {
+  //   return new Promise<boolean>(resolve => {
+  //     setTimeout(() => resolve(handshake.auth.token === 'valid-token'), 2000)
+  //   })
+  // },
+  
   // levelPersistenceDir: './storage-location',
   // gcEnabled: true,
 })

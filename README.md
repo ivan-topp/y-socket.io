@@ -121,8 +121,9 @@ import { YSocketIO } from 'y-socket.io/dist/server'
 ```js
 configuration = {
   // Optionally, set here the authentication validation callback (by default server accepts all connections)
-  // (for example: if client sent a token, you can get token from auth object 
-  authenticate: undefined, // Example: (auth) => auth.token === 'valid-token')
+  // For example: if client sent a token or other data, you can get it from auth object of 
+  //              socket.io handshake
+  authenticate: undefined, // Example: (handshake) => handshake.auth.token === 'valid-token')
   // Optionally, enable LevelDB persistence by setting the directory where you want to store the database (by default the LevelDB persistence is disabled)
   levelPersistenceDir: undefined,
   // Enable/Disable garbage collection (by default the garbage collection is enabled)
