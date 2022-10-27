@@ -242,7 +242,7 @@ export class SocketIOProvider extends Observable<string> {
    * Connect provider's socket
    * @type {() => void}
    */
-  public connect(): void {
+  public connect (): void {
     if (!this.socket.connected) {
       this.emit('status', [{ status: 'connecting' }])
       this.socket.connect()

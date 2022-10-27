@@ -28,7 +28,7 @@ const ysocketio = new YSocketIO(io, {
   //     setTimeout(() => resolve(handshake.auth.token === 'valid-token'), 2000)
   //   })
   // },
-  
+
   // levelPersistenceDir: './storage-location',
   // gcEnabled: true,
 })

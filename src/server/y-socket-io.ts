@@ -41,7 +41,7 @@ export interface YSocketIOConfiguration {
 /**
  * YSocketIO class. This handles document synchronization.
  */
-export class YSocketIO extends Observable<string>  {
+export class YSocketIO extends Observable<string> {
   /**
    * @type {Map<string, Document>}
    */
