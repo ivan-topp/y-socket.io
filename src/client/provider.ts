@@ -2,7 +2,7 @@ import * as Y from 'yjs'
 import * as bc from 'lib0/broadcastchannel'
 import * as AwarenessProtocol from 'y-protocols/awareness'
 import { Observable } from 'lib0/observable'
-import { io, Socket } from 'socket.io-client'
+import { io, ManagerOptions, Socket, SocketOptions } from 'socket.io-client'
 import { AwarenessChange } from '../types'
 
 /**
@@ -92,10 +92,16 @@ export class SocketIOProvider extends Observable<string> {
   private _synced: boolean = false
   /**
    * Interval to emit `sync-step-1` to sync changes
-   * @type {NodeJS.Timer | null}
+   * @type {ReturnType<typeof setTimeout> | null}
    * @private
    */
-  private resyncInterval: NodeJS.Timer | null = null
+  private resyncInterval: ReturnType<typeof setTimeout> | null = null
+  /**
+   * Optional overrides for socket.io
+   * @type {Partial<ManagerOptions & SocketOptions> | undefined}
+   * @private
+   */
+  private readonly _socketIoOptions: Partial<ManagerOptions & SocketOptions> | undefined;
 
   /**
    * SocketIOProvider constructor
@@ -104,6 +110,7 @@ export class SocketIOProvider extends Observable<string> {
    * @param {string} roomName The document's room name
    * @param {Y.Doc} doc The yjs document
    * @param {ProviderConfiguration} options Configuration options to the SocketIOProvider
+   * @param {Partial<ManagerOptions & SocketOptions> | undefined} socketIoOptions optional overrides for socket.io
    */
   constructor (url: string, roomName: string, doc: Y.Doc = new Y.Doc(), {
     autoConnect = true,
@@ -111,7 +118,8 @@ export class SocketIOProvider extends Observable<string> {
     resyncInterval = -1,
     disableBc = false,
     auth = {}
-  }: ProviderConfiguration) {
+  }: ProviderConfiguration, 
+    socketIoOptions: Partial<ManagerOptions & SocketOptions> | undefined = undefined) {
     super()
     while (url[url.length - 1] === '/') {
       url = url.slice(0, url.length - 1)
@@ -123,12 +131,14 @@ export class SocketIOProvider extends Observable<string> {
 
     this._broadcastChannel = `${url}/${roomName}`
     this.disableBc = disableBc
+    this._socketIoOptions = socketIoOptions;
 
     this.socket = io(`${this.url}/yjs|${roomName}`, {
       autoConnect: false,
       transports: ['websocket'],
       forceNew: true,
-      auth: auth
+      auth: auth,
+      ...socketIoOptions
     })
 
     this.doc.on('update', this.onUpdateDoc)
