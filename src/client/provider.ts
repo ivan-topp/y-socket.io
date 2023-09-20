@@ -323,6 +323,7 @@ export class SocketIOProvider extends Observable<string> {
     if (typeof window !== 'undefined') window.removeEventListener('beforeunload', this.beforeUnloadHandler)
     else if (typeof process !== 'undefined') process.off('exit', this.beforeUnloadHandler)
     this.awareness.off('update', this.awarenessUpdate)
+    this.awareness.destroy();
     this.doc.off('update', this.onUpdateDoc)
     super.destroy()
   }
