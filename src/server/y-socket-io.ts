@@ -62,7 +62,10 @@ export class YSocketIO extends Observable<string> {
    * @type {YSocketIOConfiguration}
    */
   private readonly configuration?: YSocketIOConfiguration
-
+  /**
+   * @type {Namespace | null}
+   */
+  public nsp: Namespace | null = null
   /**
    * YSocketIO constructor.
    * @constructor
@@ -90,15 +93,15 @@ export class YSocketIO extends Observable<string> {
    * @type {() => void}
    */
   public initialize (): void {
-    const dynamicNamespace = this.io.of(/^\/yjs\|.*$/)
+    this.nsp = this.io.of(/^\/yjs\|.*$/)
 
-    dynamicNamespace.use(async (socket, next) => {
+    this.nsp.use(async (socket, next) => {
       if ((this.configuration?.authenticate) == null) return next()
       if (await this.configuration.authenticate(socket.handshake)) return next()
       else return next(new Error('Unauthorized'))
     })
 
-    dynamicNamespace.on('connection', async (socket) => {
+    this.nsp.on('connection', async (socket) => {
       const namespace = socket.nsp.name.replace(/\/yjs\|/, '')
 
       const doc = await this.initDocument(namespace, socket.nsp, this.configuration?.gcEnabled)
