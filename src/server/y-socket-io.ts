@@ -46,6 +46,9 @@ export interface YSocketIOConfiguration {
    * @param handshake Provided from the handshake attribute of the socket io
    */
   authenticate?: (handshake: { [key: string]: any }) => Promise<boolean> | boolean,
+  /**
+   * The documents controller, this is used to manage the documents in the server. (default: MemoryDocumentsController)
+   */
   documentsController?: DocumentsController
 }
 
