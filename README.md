@@ -128,6 +128,8 @@ configuration = {
   levelPersistenceDir: undefined,
   // Enable/Disable garbage collection (by default the garbage collection is enabled)
   gcEnabled: true,
+  // Optionally, specify a controller to manage the documents (by default the controller is an in-memory Map)
+  documentsController
 }
 ```
 

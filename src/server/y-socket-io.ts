@@ -4,6 +4,7 @@ import * as AwarenessProtocol from 'y-protocols/awareness'
 import { LeveldbPersistence } from 'y-leveldb'
 import { Document } from './document'
 import { Observable } from 'lib0/observable'
+import { MemoryDocumentsController } from './memory-documents-controller'
 
 /**
  * Level db persistence object
@@ -14,11 +15,20 @@ export interface Persistence {
   provider: any
 }
 
+export interface DocumentsController {
+  get(name: string): Promise<Document | undefined>;
+  set(name: string, doc: Document): Promise<void>;
+  delete(name: string): Promise<void>;
+  has(name: string): Promise<boolean>;
+  getAll(): Promise<Map<string, Document>>;
+}
+
 /**
  * YSocketIO instance cofiguration. Here you can configure:
  * - gcEnabled: Enable/Disable garbage collection (default: gc=true)
  * - levelPersistenceDir: The directory path where the persistent Level database will be stored
  * - authenticate: The callback to authenticate the client connection
+ * - documentsController: The documents controller
  */
 export interface YSocketIOConfiguration {
   /**
@@ -35,7 +45,11 @@ export interface YSocketIOConfiguration {
    *  It can be a promise and if it returns true, the connection is allowed; otherwise, if it returns false, the connection is rejected.
    * @param handshake Provided from the handshake attribute of the socket io
    */
-  authenticate?: (handshake: { [key: string]: any }) => Promise<boolean> | boolean
+  authenticate?: (handshake: { [key: string]: any }) => Promise<boolean> | boolean,
+  /**
+   * The documents controller, this is used to manage the documents in the server. (default: MemoryDocumentsController)
+   */
+  documentsController?: DocumentsController
 }
 
 /**
@@ -43,9 +57,9 @@ export interface YSocketIOConfiguration {
  */
 export class YSocketIO extends Observable<string> {
   /**
-   * @type {Map<string, Document>}
+   * @type {DocumentsController}
    */
-  private readonly _documents: Map<string, Document> = new Map<string, Document>()
+  private readonly _documents: DocumentsController
   /**
    * @type {Server}
    */
@@ -80,6 +94,7 @@ export class YSocketIO extends Observable<string> {
     this._levelPersistenceDir = configuration?.levelPersistenceDir ?? process.env.YPERSISTENCE
     if (this._levelPersistenceDir != null) this.initLevelDB(this._levelPersistenceDir)
 
+    this._documents = configuration?.documentsController ?? new MemoryDocumentsController()
     this.configuration = configuration
   }
 
@@ -121,8 +136,8 @@ export class YSocketIO extends Observable<string> {
    * this way when you destroy the document you are also closing any existing connection on the document.
    * @type {Map<string, Document>}
    */
-  public get documents (): Map<string, Document> {
-    return this._documents
+  public get documents(): Promise<Map<string, Document>> {
+    return this._documents.getAll()
   }
 
   /**
@@ -139,18 +154,19 @@ export class YSocketIO extends Observable<string> {
    * @returns {Promise<Document>} The document
    */
   private async initDocument (name: string, namespace: Namespace, gc: boolean = true): Promise<Document> {
-    const doc = this._documents.get(name) ?? (new Document(name, namespace, {
+    const doc = await this._documents.get(name) ?? (new Document(name, namespace, {
       onUpdate: (doc, update) => this.emit('document-update', [doc, update]),
       onChangeAwareness: (doc, update) => this.emit('awareness-update', [doc, update]),
       onDestroy: async (doc) => {
-        this._documents.delete(doc.name)
+        await this._documents.delete(doc.name)
         this.emit('document-destroy', [doc])
       }
     }))
     doc.gc = gc
-    if (!this._documents.has(name)) {
+    const documentExists = await this._documents.has(name)
+    if (!documentExists) {
       if (this.persistence != null) await this.persistence.bindState(name, doc)
-      this._documents.set(name, doc)
+      await this._documents.set(name, doc)
       this.emit('document-loaded', [doc])
     }
     return doc
