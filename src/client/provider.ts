@@ -37,6 +37,14 @@ export interface ProviderConfiguration {
    * (Optional) Add the authentication data
    */
   auth?: { [key: string]: any }
+  /**
+   * The time over which to debounce document updates before syncing
+   */
+  debounceTime?: number
+  /**
+   * Notify pending state when debouncing
+   */
+  onPending?: (pending: boolean) => void
 }
 
 /**
@@ -64,6 +72,29 @@ export class SocketIOProvider extends Observable<string> {
    * @type {Socket}
    */
   public socket: Socket
+  /**
+   * The time over which to debounce document updates before syncing
+   * @type {number}
+   * @private
+   */
+  public readonly debounceTime: number
+  /**
+   * The timer used to debounce document updates
+   * @type {number}
+   * @private
+   */
+  private updateTimer: number
+  /**
+   * Notify pending state when debouncing
+   * @type {((pending: boolean) => void) | undefined}
+   */
+  public onPending: ((pending: boolean) => void) | undefined
+  /**
+   * The pending debouncing updates
+   * @type {number}
+   * @private
+   */
+  private pendingUpdates: Uint8Array[];
   /**
    * The yjs document
    * @type {Y.Doc}
@@ -117,7 +148,9 @@ export class SocketIOProvider extends Observable<string> {
     awareness = new AwarenessProtocol.Awareness(doc),
     resyncInterval = -1,
     disableBc = false,
-    auth = {}
+    auth = {},
+    debounceTime,
+    onPending
   }: ProviderConfiguration, 
     socketIoOptions: Partial<ManagerOptions & SocketOptions> | undefined = undefined) {
     super()
@@ -140,6 +173,8 @@ export class SocketIOProvider extends Observable<string> {
       auth: auth,
       ...socketIoOptions
     })
+    this.debounceTime = debounceTime
+    this.onPending = onPending
 
     this.doc.on('update', this.onUpdateDoc)
 
@@ -337,6 +372,16 @@ export class SocketIOProvider extends Observable<string> {
     this.doc.off('update', this.onUpdateDoc)
     super.destroy()
   }
+  
+  private readonly onUpdateDocInner = (update: Uint8Array, origin: SocketIOProvider): void => {
+    this.socket.emit('sync-update', update)
+    if (this.bcconnected) {
+      bc.publish(this._broadcastChannel, {
+        type: 'sync-update',
+        data: update
+      }, this)
+    }
+  }
 
   /**
    * This function is executed when the document is updated, if the instance that
@@ -347,15 +392,24 @@ export class SocketIOProvider extends Observable<string> {
    * @type {(update: Uint8Array, origin: SocketIOProvider) => void}
    */
   private readonly onUpdateDoc = (update: Uint8Array, origin: SocketIOProvider): void => {
-    if (origin !== this) {
-      this.socket.emit('sync-update', update)
-      if (this.bcconnected) {
-        bc.publish(this._broadcastChannel, {
-          type: 'sync-update',
-          data: update
-        }, this)
-      }
+    if (origin === this) {
+      return
     }
+    if (!this.debounceTime) {
+      this.onUpdateDocInner(update, origin)
+    }
+    if (this.updateTimer) {
+      this.onPending?.(true)
+      this.pendingUpdates.push(update)
+      clearInterval(this.updateTimer)
+    } else {
+      this.pendingUpdates = [update]
+    }
+    this.updateTimer = setInterval(() => {
+      const mergedUpdate = Y.mergeUpdates(this.pendingUpdates)
+      this.onUpdateDocInner(mergedUpdate, origin)
+      this.onPending?.(false)
+    }, this.debounceTime)
   }
 
   /**
