@@ -77,13 +77,13 @@ export class SocketIOProvider extends Observable<string> {
    * @type {number}
    * @private
    */
-  public readonly debounceTime: number
+  public readonly debounceTime?: number
   /**
    * The timer used to debounce document updates
-   * @type {number}
+   * @type {ReturnType<typeof setTimeout>}
    * @private
    */
-  private updateTimer: number
+  private updateTimer?: ReturnType<typeof setTimeout>
   /**
    * Notify pending state when debouncing
    * @type {((pending: boolean) => void) | undefined}
@@ -91,10 +91,10 @@ export class SocketIOProvider extends Observable<string> {
   public onPending: ((pending: boolean) => void) | undefined
   /**
    * The pending debouncing updates
-   * @type {number}
+   * @type {Uint8Array[]}
    * @private
    */
-  private pendingUpdates: Uint8Array[];
+  private pendingUpdates: Uint8Array[]
   /**
    * The yjs document
    * @type {Y.Doc}
@@ -132,7 +132,7 @@ export class SocketIOProvider extends Observable<string> {
    * @type {Partial<ManagerOptions & SocketOptions> | undefined}
    * @private
    */
-  private readonly _socketIoOptions: Partial<ManagerOptions & SocketOptions> | undefined;
+  private readonly _socketIoOptions: Partial<ManagerOptions & SocketOptions> | undefined
 
   /**
    * SocketIOProvider constructor
@@ -151,8 +151,8 @@ export class SocketIOProvider extends Observable<string> {
     auth = {},
     debounceTime,
     onPending
-  }: ProviderConfiguration, 
-    socketIoOptions: Partial<ManagerOptions & SocketOptions> | undefined = undefined) {
+  }: ProviderConfiguration,
+  socketIoOptions: Partial<ManagerOptions & SocketOptions> | undefined = undefined) {
     super()
     while (url[url.length - 1] === '/') {
       url = url.slice(0, url.length - 1)
@@ -164,7 +164,7 @@ export class SocketIOProvider extends Observable<string> {
 
     this._broadcastChannel = `${url}/${roomName}`
     this.disableBc = disableBc
-    this._socketIoOptions = socketIoOptions;
+    this._socketIoOptions = socketIoOptions
 
     this.socket = io(`${this.url}/yjs|${roomName}`, {
       autoConnect: false,
@@ -175,6 +175,7 @@ export class SocketIOProvider extends Observable<string> {
     })
     this.debounceTime = debounceTime
     this.onPending = onPending
+    this.pendingUpdates = []
 
     this.doc.on('update', this.onUpdateDoc)
 
@@ -368,11 +369,11 @@ export class SocketIOProvider extends Observable<string> {
     if (typeof window !== 'undefined') window.removeEventListener('beforeunload', this.beforeUnloadHandler)
     else if (typeof process !== 'undefined') process.off('exit', this.beforeUnloadHandler)
     this.awareness.off('update', this.awarenessUpdate)
-    this.awareness.destroy();
+    this.awareness.destroy()
     this.doc.off('update', this.onUpdateDoc)
     super.destroy()
   }
-  
+
   private readonly onUpdateDocInner = (update: Uint8Array, origin: SocketIOProvider): void => {
     this.socket.emit('sync-update', update)
     if (this.bcconnected) {
@@ -395,20 +396,21 @@ export class SocketIOProvider extends Observable<string> {
     if (origin === this) {
       return
     }
-    if (!this.debounceTime) {
+    if (this.debounceTime !== undefined) {
       this.onUpdateDocInner(update, origin)
     }
-    if (this.updateTimer) {
+    if (this.updateTimer !== undefined) {
       this.onPending?.(true)
       this.pendingUpdates.push(update)
-      clearInterval(this.updateTimer)
+      clearTimeout(this.updateTimer)
     } else {
       this.pendingUpdates = [update]
     }
-    this.updateTimer = setInterval(() => {
+    this.updateTimer = setTimeout(() => {
       const mergedUpdate = Y.mergeUpdates(this.pendingUpdates)
       this.onUpdateDocInner(mergedUpdate, origin)
       this.onPending?.(false)
+      this.updateTimer = undefined
     }, this.debounceTime)
   }
 
