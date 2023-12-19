@@ -95,6 +95,12 @@ export class SocketIOProvider extends Observable<string> {
    */
   private updateTimer?: ReturnType<typeof setTimeout>
   /**
+   * The timer used to debounce document awareness updates
+   * @type {ReturnType<typeof setTimeout>}
+   * @private
+   */
+  private updateAwarenessTimer?: ReturnType<typeof setTimeout>
+  /**
    * Notify pending state when debouncing
    * @type {((pending: boolean) => void) | undefined}
    */
@@ -462,12 +468,12 @@ export class SocketIOProvider extends Observable<string> {
     if (this.debounceAwarenessTime === undefined) {
       this.awarenessUpdateInner(awarenessChange, origin)
     }
-    if (this.updateTimer !== undefined) {
-      clearTimeout(this.updateTimer)
+    if (this.updateAwarenessTimer !== undefined) {
+      clearTimeout(this.updateAwarenessTimer)
     }
-    this.updateTimer = setTimeout(() => {
+    this.updateAwarenessTimer = setTimeout(() => {
       this.awarenessUpdateInner(awarenessChange, origin)
-      this.updateTimer = undefined
+      this.updateAwarenessTimer = undefined
     }, this.debounceAwarenessTime)
   }
 
