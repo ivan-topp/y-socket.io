@@ -42,6 +42,10 @@ export interface ProviderConfiguration {
    */
   debounceTime?: number
   /**
+   * The time over which to debounce document awareness updates before syncing
+   */
+  debounceAwarenessTime?: number
+  /**
    * Notify pending state when debouncing
    */
   onPending?: (pending: boolean) => void
@@ -78,6 +82,12 @@ export class SocketIOProvider extends Observable<string> {
    * @private
    */
   public readonly debounceTime?: number
+  /**
+   * The time over which to debounce document awareness updates before syncing
+   * @type {number}
+   * @private
+   */
+  public readonly debounceAwarenessTime?: number
   /**
    * The timer used to debounce document updates
    * @type {ReturnType<typeof setTimeout>}
@@ -150,6 +160,7 @@ export class SocketIOProvider extends Observable<string> {
     disableBc = false,
     auth = {},
     debounceTime,
+    debounceAwarenessTime,
     onPending
   }: ProviderConfiguration,
   socketIoOptions: Partial<ManagerOptions & SocketOptions> | undefined = undefined) {
@@ -174,6 +185,7 @@ export class SocketIOProvider extends Observable<string> {
       ...socketIoOptions
     })
     this.debounceTime = debounceTime
+    this.debounceAwarenessTime = debounceAwarenessTime
     this.onPending = onPending
     this.pendingUpdates = []
 
@@ -385,8 +397,6 @@ export class SocketIOProvider extends Observable<string> {
   }
 
   /**
-   * This function is executed when the document is updated, if the instance that
-   * emit the change is not this, it emit the changes by socket and broadcast channel.
    * @private
    * @param {Uint8Array} update Document update
    * @param {SocketIOProvider} origin The SocketIOProvider instance that emits the change.
@@ -425,13 +435,12 @@ export class SocketIOProvider extends Observable<string> {
   }
 
   /**
-   * This function is executed when the local awareness changes and this broadcasts the changes per socket and broadcast channel.
    * @private
    * @param {{ added: number[], updated: number[], removed: number[] }} awarenessChanges The clients added, updated and removed
    * @param {SocketIOProvider | null} origin The SocketIOProvider instance that emits the change.
    * @type {({ added, updated, removed }: { added: number[], updated: number[], removed: number[] }, origin: SocketIOProvider | null) => void}
    */
-  private readonly awarenessUpdate = ({ added, updated, removed }: AwarenessChange, origin: SocketIOProvider | null): void => {
+  private readonly awarenessUpdateInner = ({ added, updated, removed }: AwarenessChange, origin: SocketIOProvider | null): void => {
     const changedClients = added.concat(updated).concat(removed)
     this.socket.emit('awareness-update', AwarenessProtocol.encodeAwarenessUpdate(this.awareness, changedClients))
     if (this.bcconnected) {
@@ -440,6 +449,26 @@ export class SocketIOProvider extends Observable<string> {
         data: AwarenessProtocol.encodeAwarenessUpdate(this.awareness, changedClients)
       }, this)
     }
+  }
+
+  /**
+   * This function is executed when the local awareness changes and this broadcasts the changes per socket and broadcast channel.
+   * @private
+   * @param {{ added: number[], updated: number[], removed: number[] }} awarenessChanges The clients added, updated and removed
+   * @param {SocketIOProvider | null} origin The SocketIOProvider instance that emits the change.
+   * @type {({ added, updated, removed }: { added: number[], updated: number[], removed: number[] }, origin: SocketIOProvider | null) => void}
+   */
+  private readonly awarenessUpdate = (awarenessChange: AwarenessChange, origin: SocketIOProvider | null): void => {
+    if (this.debounceAwarenessTime === undefined) {
+      this.awarenessUpdateInner(awarenessChange, origin)
+    }
+    if (this.updateTimer !== undefined) {
+      clearTimeout(this.updateTimer)
+    }
+    this.updateTimer = setTimeout(() => {
+      this.awarenessUpdateInner(awarenessChange, origin)
+      this.updateTimer = undefined
+    }, this.debounceAwarenessTime)
   }
 
   /**
