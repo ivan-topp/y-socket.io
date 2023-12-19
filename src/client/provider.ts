@@ -396,7 +396,7 @@ export class SocketIOProvider extends Observable<string> {
     if (origin === this) {
       return
     }
-    if (this.debounceTime !== undefined) {
+    if (this.debounceTime === undefined) {
       this.onUpdateDocInner(update, origin)
     }
     if (this.updateTimer !== undefined) {
