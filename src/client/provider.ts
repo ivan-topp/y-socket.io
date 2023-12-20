@@ -42,9 +42,17 @@ export interface ProviderConfiguration {
    */
   debounceTime?: number
   /**
+   * The maximum time to wait before debouncing updates
+   */
+  maxWaitForDebouncingUpdates?: number
+  /**
    * The time over which to debounce document awareness updates before syncing
    */
   debounceAwarenessTime?: number
+  /**
+   * The maximum time to wait before debouncing awareness updates
+   */
+  maxWaitForDebouncingAwareness?: number
   /**
    * Notify pending state when debouncing
    */
@@ -83,6 +91,18 @@ export class SocketIOProvider extends Observable<string> {
    */
   public readonly debounceTime?: number
   /**
+   * The maximum time to wait before debouncing updates
+   * @type {number}
+   * @private
+   */
+  public readonly maxWaitForDebouncingUpdates?: number
+  /**
+   * The maximum time to wait before debouncing awareness updates
+   * @type {number}
+   * @private
+   */
+  public readonly maxWaitForDebouncingAwareness?: number
+  /**
    * The time over which to debounce document awareness updates before syncing
    * @type {number}
    * @private
@@ -94,6 +114,20 @@ export class SocketIOProvider extends Observable<string> {
    * @private
    */
   private updateTimer?: ReturnType<typeof setTimeout>
+  /**
+   * The unix timestamp of the last update,
+   * used to ensure updates are sent within maxWaitForDebouncingUpdates
+   * @type {number}
+   * @private
+   */
+  private lastUpdate?: number
+  /**
+   * The unix timestamp of the last awareness update,
+   * used to ensure updates are sent within maxWaitForDebouncingAwareness
+   * @type {number}
+   * @private
+   */
+  private lastAwarenessUpdate?: number
   /**
    * The timer used to debounce document awareness updates
    * @type {ReturnType<typeof setTimeout>}
@@ -166,7 +200,9 @@ export class SocketIOProvider extends Observable<string> {
     disableBc = false,
     auth = {},
     debounceTime,
+    maxWaitForDebouncingUpdates,
     debounceAwarenessTime,
+    maxWaitForDebouncingAwareness,
     onPending
   }: ProviderConfiguration,
   socketIoOptions: Partial<ManagerOptions & SocketOptions> | undefined = undefined) {
@@ -191,7 +227,9 @@ export class SocketIOProvider extends Observable<string> {
       ...socketIoOptions
     })
     this.debounceTime = debounceTime
+    this.maxWaitForDebouncingUpdates = maxWaitForDebouncingUpdates ?? debounceTime
     this.debounceAwarenessTime = debounceAwarenessTime
+    this.maxWaitForDebouncingAwareness = maxWaitForDebouncingAwareness ?? debounceAwarenessTime
     this.onPending = onPending
     this.pendingUpdates = []
 
@@ -415,6 +453,16 @@ export class SocketIOProvider extends Observable<string> {
     if (this.debounceTime === undefined) {
       this.onUpdateDocInner(update, origin)
     }
+    if (this.maxWaitForDebouncingUpdates !== undefined && this.lastUpdate !== undefined && Date.now() - this.lastUpdate >= this.maxWaitForDebouncingUpdates) {
+      // Ensure updates are sent at least once every maxWaitForDebouncingUpdates
+      this.pendingUpdates.push(update)
+      clearTimeout(this.updateTimer)
+      this.updateTimer = undefined
+      this.lastUpdate = Date.now()
+      const mergedUpdate = Y.mergeUpdates(this.pendingUpdates)
+      this.onUpdateDocInner(mergedUpdate, origin)
+      this.onPending?.(false)
+    }
     if (this.updateTimer !== undefined) {
       this.onPending?.(true)
       this.pendingUpdates.push(update)
@@ -423,6 +471,7 @@ export class SocketIOProvider extends Observable<string> {
       this.pendingUpdates = [update]
     }
     this.updateTimer = setTimeout(() => {
+      this.lastUpdate = Date.now()
       const mergedUpdate = Y.mergeUpdates(this.pendingUpdates)
       this.onUpdateDocInner(mergedUpdate, origin)
       this.onPending?.(false)
@@ -471,7 +520,15 @@ export class SocketIOProvider extends Observable<string> {
     if (this.updateAwarenessTimer !== undefined) {
       clearTimeout(this.updateAwarenessTimer)
     }
+    if (this.maxWaitForDebouncingAwareness !== undefined && this.lastAwarenessUpdate !== undefined && Date.now() - this.lastAwarenessUpdate >= this.maxWaitForDebouncingAwareness) {
+      // Ensure waiting no longer than `debounceAwarenessTime` for an awareness update
+      clearTimeout(this.updateAwarenessTimer)
+      this.updateAwarenessTimer = undefined
+      this.lastAwarenessUpdate = Date.now()
+      this.awarenessUpdateInner(awarenessChange, origin)
+    }
     this.updateAwarenessTimer = setTimeout(() => {
+      this.lastAwarenessUpdate = Date.now()
       this.awarenessUpdateInner(awarenessChange, origin)
       this.updateAwarenessTimer = undefined
     }, this.debounceAwarenessTime)
