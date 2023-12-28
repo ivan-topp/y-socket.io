@@ -233,6 +233,12 @@ export class SocketIOProvider extends Observable<string> {
     this.onPending = onPending
     this.pendingUpdates = []
 
+    this.initSyncListeners()
+
+    this.initAwarenessListeners()
+
+    this.initSystemListeners()
+
     this.doc.on('update', this.onUpdateDoc)
 
     this.socket.on('connect', () => this.onSocketConnection(resyncInterval))
@@ -240,12 +246,6 @@ export class SocketIOProvider extends Observable<string> {
     this.socket.on('disconnect', (event) => this.onSocketDisconnection(event))
 
     this.socket.on('connect_error', (error) => this.onSocketConnectionError(error))
-
-    this.initSyncListeners()
-
-    this.initAwarenessListeners()
-
-    this.initSystemListeners()
 
     awareness.on('update', this.awarenessUpdate)
 
