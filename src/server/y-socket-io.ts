@@ -46,7 +46,7 @@ export interface YSocketIOConfiguration {
    *  It can be a promise and if it returns true, the connection is allowed; otherwise, if it returns false, the connection is rejected.
    * @param handshake Provided from the handshake attribute of the socket io
    */
-  authenticate?: (handshake: { [key: string]: any }) => Promise<boolean> | boolean
+  authenticate?: (handshake: Handshake) => Promise<boolean> | boolean
 }
 
 /**
