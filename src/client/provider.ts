@@ -37,6 +37,26 @@ export interface ProviderConfiguration {
    * (Optional) Add the authentication data
    */
   auth?: { [key: string]: any }
+  /**
+   * The time over which to debounce document updates before syncing
+   */
+  debounceTime?: number
+  /**
+   * The maximum time to wait before debouncing updates
+   */
+  maxWaitForDebouncingUpdates?: number
+  /**
+   * The time over which to debounce document awareness updates before syncing
+   */
+  debounceAwarenessTime?: number
+  /**
+   * The maximum time to wait before debouncing awareness updates
+   */
+  maxWaitForDebouncingAwareness?: number
+  /**
+   * Notify pending state when debouncing
+   */
+  onPending?: (pending: boolean) => void
 }
 
 /**
@@ -64,6 +84,67 @@ export class SocketIOProvider extends Observable<string> {
    * @type {Socket}
    */
   public socket: Socket
+  /**
+   * The time over which to debounce document updates before syncing
+   * @type {number}
+   * @private
+   */
+  public readonly debounceTime?: number
+  /**
+   * The maximum time to wait before debouncing updates
+   * @type {number}
+   * @private
+   */
+  public readonly maxWaitForDebouncingUpdates?: number
+  /**
+   * The maximum time to wait before debouncing awareness updates
+   * @type {number}
+   * @private
+   */
+  public readonly maxWaitForDebouncingAwareness?: number
+  /**
+   * The time over which to debounce document awareness updates before syncing
+   * @type {number}
+   * @private
+   */
+  public readonly debounceAwarenessTime?: number
+  /**
+   * The timer used to debounce document updates
+   * @type {ReturnType<typeof setTimeout>}
+   * @private
+   */
+  private updateTimer?: ReturnType<typeof setTimeout>
+  /**
+   * The unix timestamp of the last update,
+   * used to ensure updates are sent within maxWaitForDebouncingUpdates
+   * @type {number}
+   * @private
+   */
+  private lastUpdate?: number
+  /**
+   * The unix timestamp of the last awareness update,
+   * used to ensure updates are sent within maxWaitForDebouncingAwareness
+   * @type {number}
+   * @private
+   */
+  private lastAwarenessUpdate?: number
+  /**
+   * The timer used to debounce document awareness updates
+   * @type {ReturnType<typeof setTimeout>}
+   * @private
+   */
+  private updateAwarenessTimer?: ReturnType<typeof setTimeout>
+  /**
+   * Notify pending state when debouncing
+   * @type {((pending: boolean) => void) | undefined}
+   */
+  public onPending: ((pending: boolean) => void) | undefined
+  /**
+   * The pending debouncing updates
+   * @type {Uint8Array[]}
+   * @private
+   */
+  private pendingUpdates: Uint8Array[]
   /**
    * The yjs document
    * @type {Y.Doc}
@@ -101,7 +182,7 @@ export class SocketIOProvider extends Observable<string> {
    * @type {Partial<ManagerOptions & SocketOptions> | undefined}
    * @private
    */
-  private readonly _socketIoOptions: Partial<ManagerOptions & SocketOptions> | undefined;
+  private readonly _socketIoOptions: Partial<ManagerOptions & SocketOptions> | undefined
 
   /**
    * SocketIOProvider constructor
@@ -117,9 +198,14 @@ export class SocketIOProvider extends Observable<string> {
     awareness = new AwarenessProtocol.Awareness(doc),
     resyncInterval = -1,
     disableBc = false,
-    auth = {}
-  }: ProviderConfiguration, 
-    socketIoOptions: Partial<ManagerOptions & SocketOptions> | undefined = undefined) {
+    auth = {},
+    debounceTime,
+    maxWaitForDebouncingUpdates,
+    debounceAwarenessTime,
+    maxWaitForDebouncingAwareness,
+    onPending
+  }: ProviderConfiguration,
+  socketIoOptions: Partial<ManagerOptions & SocketOptions> | undefined = undefined) {
     super()
     while (url[url.length - 1] === '/') {
       url = url.slice(0, url.length - 1)
@@ -131,7 +217,7 @@ export class SocketIOProvider extends Observable<string> {
 
     this._broadcastChannel = `${url}/${roomName}`
     this.disableBc = disableBc
-    this._socketIoOptions = socketIoOptions;
+    this._socketIoOptions = socketIoOptions
 
     this.socket = io(`${this.url}/yjs|${roomName}`, {
       autoConnect: false,
@@ -140,6 +226,18 @@ export class SocketIOProvider extends Observable<string> {
       auth: auth,
       ...socketIoOptions
     })
+    this.debounceTime = debounceTime
+    this.maxWaitForDebouncingUpdates = maxWaitForDebouncingUpdates ?? debounceTime
+    this.debounceAwarenessTime = debounceAwarenessTime
+    this.maxWaitForDebouncingAwareness = maxWaitForDebouncingAwareness ?? debounceAwarenessTime
+    this.onPending = onPending
+    this.pendingUpdates = []
+
+    this.initSyncListeners()
+
+    this.initAwarenessListeners()
+
+    this.initSystemListeners()
 
     this.doc.on('update', this.onUpdateDoc)
 
@@ -148,12 +246,6 @@ export class SocketIOProvider extends Observable<string> {
     this.socket.on('disconnect', (event) => this.onSocketDisconnection(event))
 
     this.socket.on('connect_error', (error) => this.onSocketConnectionError(error))
-
-    this.initSyncListeners()
-
-    this.initAwarenessListeners()
-
-    this.initSystemListeners()
 
     awareness.on('update', this.awarenessUpdate)
 
@@ -333,29 +425,58 @@ export class SocketIOProvider extends Observable<string> {
     if (typeof window !== 'undefined') window.removeEventListener('beforeunload', this.beforeUnloadHandler)
     else if (typeof process !== 'undefined') process.off('exit', this.beforeUnloadHandler)
     this.awareness.off('update', this.awarenessUpdate)
-    this.awareness.destroy();
+    this.awareness.destroy()
     this.doc.off('update', this.onUpdateDoc)
     super.destroy()
   }
 
+  private readonly onUpdateDocInner = (update: Uint8Array, origin: SocketIOProvider): void => {
+    this.socket.emit('sync-update', update)
+    if (this.bcconnected) {
+      bc.publish(this._broadcastChannel, {
+        type: 'sync-update',
+        data: update
+      }, this)
+    }
+  }
+
   /**
-   * This function is executed when the document is updated, if the instance that
-   * emit the change is not this, it emit the changes by socket and broadcast channel.
    * @private
    * @param {Uint8Array} update Document update
    * @param {SocketIOProvider} origin The SocketIOProvider instance that emits the change.
    * @type {(update: Uint8Array, origin: SocketIOProvider) => void}
    */
   private readonly onUpdateDoc = (update: Uint8Array, origin: SocketIOProvider): void => {
-    if (origin !== this) {
-      this.socket.emit('sync-update', update)
-      if (this.bcconnected) {
-        bc.publish(this._broadcastChannel, {
-          type: 'sync-update',
-          data: update
-        }, this)
-      }
+    if (origin === this) {
+      return
     }
+    if (this.debounceTime === undefined) {
+      this.onUpdateDocInner(update, origin)
+    }
+    if (this.maxWaitForDebouncingUpdates !== undefined && this.lastUpdate !== undefined && Date.now() - this.lastUpdate >= this.maxWaitForDebouncingUpdates) {
+      // Ensure updates are sent at least once every maxWaitForDebouncingUpdates
+      this.pendingUpdates.push(update)
+      clearTimeout(this.updateTimer)
+      this.updateTimer = undefined
+      this.lastUpdate = Date.now()
+      const mergedUpdate = Y.mergeUpdates(this.pendingUpdates)
+      this.onUpdateDocInner(mergedUpdate, origin)
+      this.onPending?.(false)
+    }
+    if (this.updateTimer !== undefined) {
+      this.onPending?.(true)
+      this.pendingUpdates.push(update)
+      clearTimeout(this.updateTimer)
+    } else {
+      this.pendingUpdates = [update]
+    }
+    this.updateTimer = setTimeout(() => {
+      this.lastUpdate = Date.now()
+      const mergedUpdate = Y.mergeUpdates(this.pendingUpdates)
+      this.onUpdateDocInner(mergedUpdate, origin)
+      this.onPending?.(false)
+      this.updateTimer = undefined
+    }, this.debounceTime)
   }
 
   /**
@@ -369,13 +490,12 @@ export class SocketIOProvider extends Observable<string> {
   }
 
   /**
-   * This function is executed when the local awareness changes and this broadcasts the changes per socket and broadcast channel.
    * @private
    * @param {{ added: number[], updated: number[], removed: number[] }} awarenessChanges The clients added, updated and removed
    * @param {SocketIOProvider | null} origin The SocketIOProvider instance that emits the change.
    * @type {({ added, updated, removed }: { added: number[], updated: number[], removed: number[] }, origin: SocketIOProvider | null) => void}
    */
-  private readonly awarenessUpdate = ({ added, updated, removed }: AwarenessChange, origin: SocketIOProvider | null): void => {
+  private readonly awarenessUpdateInner = ({ added, updated, removed }: AwarenessChange, origin: SocketIOProvider | null): void => {
     const changedClients = added.concat(updated).concat(removed)
     this.socket.emit('awareness-update', AwarenessProtocol.encodeAwarenessUpdate(this.awareness, changedClients))
     if (this.bcconnected) {
@@ -384,6 +504,34 @@ export class SocketIOProvider extends Observable<string> {
         data: AwarenessProtocol.encodeAwarenessUpdate(this.awareness, changedClients)
       }, this)
     }
+  }
+
+  /**
+   * This function is executed when the local awareness changes and this broadcasts the changes per socket and broadcast channel.
+   * @private
+   * @param {{ added: number[], updated: number[], removed: number[] }} awarenessChanges The clients added, updated and removed
+   * @param {SocketIOProvider | null} origin The SocketIOProvider instance that emits the change.
+   * @type {({ added, updated, removed }: { added: number[], updated: number[], removed: number[] }, origin: SocketIOProvider | null) => void}
+   */
+  private readonly awarenessUpdate = (awarenessChange: AwarenessChange, origin: SocketIOProvider | null): void => {
+    if (this.debounceAwarenessTime === undefined) {
+      this.awarenessUpdateInner(awarenessChange, origin)
+    }
+    if (this.updateAwarenessTimer !== undefined) {
+      clearTimeout(this.updateAwarenessTimer)
+    }
+    if (this.maxWaitForDebouncingAwareness !== undefined && this.lastAwarenessUpdate !== undefined && Date.now() - this.lastAwarenessUpdate >= this.maxWaitForDebouncingAwareness) {
+      // Ensure waiting no longer than `debounceAwarenessTime` for an awareness update
+      clearTimeout(this.updateAwarenessTimer)
+      this.updateAwarenessTimer = undefined
+      this.lastAwarenessUpdate = Date.now()
+      this.awarenessUpdateInner(awarenessChange, origin)
+    }
+    this.updateAwarenessTimer = setTimeout(() => {
+      this.lastAwarenessUpdate = Date.now()
+      this.awarenessUpdateInner(awarenessChange, origin)
+      this.updateAwarenessTimer = undefined
+    }, this.debounceAwarenessTime)
   }
 
   /**

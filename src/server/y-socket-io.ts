@@ -4,6 +4,9 @@ import * as AwarenessProtocol from 'y-protocols/awareness'
 import { LeveldbPersistence } from 'y-leveldb'
 import { Document } from './document'
 import { Observable } from 'lib0/observable'
+import { Handshake } from 'socket.io/dist/socket'
+
+const DEFAULT_TIMEOUT_FOR_ACK = 10_000
 
 /**
  * Level db persistence object
@@ -26,6 +29,14 @@ export interface YSocketIOConfiguration {
    */
   gcEnabled?: boolean
   /**
+   * Enable/Disable sending messages only to local WebSockets
+   */
+  localOnly?: boolean
+  /**
+   * Set timeout time for acknowledgements
+   */
+  timeoutForAck?: number
+  /**
    * The directory path where the persistent Level database will be stored
    */
   levelPersistenceDir?: string
@@ -35,7 +46,7 @@ export interface YSocketIOConfiguration {
    *  It can be a promise and if it returns true, the connection is allowed; otherwise, if it returns false, the connection is rejected.
    * @param handshake Provided from the handshake attribute of the socket io
    */
-  authenticate?: (handshake: { [key: string]: any }) => Promise<boolean> | boolean
+  authenticate?: (handshake: Handshake) => Promise<boolean> | boolean
 }
 
 /**
@@ -104,7 +115,7 @@ export class YSocketIO extends Observable<string> {
     this.nsp.on('connection', async (socket) => {
       const namespace = socket.nsp.name.replace(/\/yjs\|/, '')
 
-      const doc = await this.initDocument(namespace, socket.nsp, this.configuration?.gcEnabled)
+      const doc = await this.initDocument(namespace, socket.nsp, this.configuration?.localOnly, this.configuration?.gcEnabled)
 
       this.initSyncListeners(socket, doc)
       this.initAwarenessListeners(socket, doc)
@@ -138,8 +149,8 @@ export class YSocketIO extends Observable<string> {
    * @param {boolean} gc Enable/Disable garbage collection (default: gc=true)
    * @returns {Promise<Document>} The document
    */
-  private async initDocument (name: string, namespace: Namespace, gc: boolean = true): Promise<Document> {
-    const doc = this._documents.get(name) ?? (new Document(name, namespace, {
+  private async initDocument (name: string, namespace: Namespace, localOnly?: boolean, gc: boolean = true): Promise<Document> {
+    const doc = this._documents.get(name) ?? (new Document(name, namespace, localOnly, {
       onUpdate: (doc, update) => this.emit('document-update', [doc, update]),
       onChangeAwareness: (doc, update) => this.emit('awareness-update', [doc, update]),
       onDestroy: async (doc) => {
@@ -256,7 +267,13 @@ export class YSocketIO extends Observable<string> {
    * @param {Document} doc The document
    */
   private readonly startSynchronization = (socket: Socket, doc: Document): void => {
-    socket.emit('sync-step-1', Y.encodeStateVector(doc), (update: Uint8Array) => {
+    socket.timeout(
+      this.configuration?.timeoutForAck ?? DEFAULT_TIMEOUT_FOR_ACK
+    ).emit('sync-step-1', Y.encodeStateVector(doc), (error: Error | undefined | null, update: Uint8Array) => {
+      if (error !== undefined && error !== null) {
+        console.error('An error occurred during sync-step-1', error)
+        return
+      }
       Y.applyUpdate(doc, new Uint8Array(update), this)
     })
     socket.emit('awareness-update', AwarenessProtocol.encodeAwarenessUpdate(doc.awareness, Array.from(doc.awareness.getStates().keys())))
