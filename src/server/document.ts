@@ -36,11 +36,17 @@ export class Document extends Y.Doc {
    */
   public name: string
   /**
-   * The socket connection
+   * The namespace connection
    * @type {Namespace}
    * @private
    */
   private readonly namespace: Namespace
+  /**
+   * Indicator as to whether to send document updates only to local WebSockets
+   * @type {boolean}
+   * @private
+   */
+  private readonly localOnly?: boolean
   /**
    * The document awareness
    * @type {Awareness}
@@ -58,12 +64,14 @@ export class Document extends Y.Doc {
    * @constructor
    * @param {string} name Name for the document
    * @param {Namespace} namespace The namespace connection
+   * @param {boolean} localOnly Indicator as to whether to send document updates only to local WebSockets
    * @param {Callbacks} callbacks The document callbacks
    */
-  constructor (name: string, namespace: Namespace, callbacks?: Callbacks) {
+  constructor (name: string, namespace: Namespace, localOnly?: boolean, callbacks?: Callbacks) {
     super({ gc: gcEnabled })
     this.name = name
     this.namespace = namespace
+    this.localOnly = localOnly
     this.awareness = new AwarenessProtocol.Awareness(this)
     this.awareness.setLocalState(null)
     this.callbacks = callbacks
@@ -87,7 +95,11 @@ export class Document extends Y.Doc {
         console.warn(error)
       }
     }
-    this.namespace.emit('sync-update', update)
+    if (this.localOnly !== undefined && this.localOnly) {
+      this.namespace.local.emit('sync-update', update)
+    } else {
+      this.namespace.emit('sync-update', update)
+    }
   }
 
   /**
